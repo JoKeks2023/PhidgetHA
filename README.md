@@ -1,9 +1,19 @@
+<div align="center">
+
 # PhidgetHA
 
-A native Home Assistant **custom integration** for Phidgets RFID readers —
-built around the [Phidget22](https://www.phidgets.com/docs22/) SDK, talking
-directly to the USB reader from inside Home Assistant Core. No add-on, no
-MQTT broker, no external server required.
+**A native Home Assistant integration for Phidgets RFID readers.**
+No add-on. No MQTT broker. No external server. Just USB → Home Assistant.
+
+[![Tests](https://img.shields.io/github/actions/workflow/status/JoKeks2023/PhidgetHA/test.yml?branch=main&label=tests)](https://github.com/JoKeks2023/PhidgetHA/actions/workflows/test.yml)
+[![Validate](https://img.shields.io/github/actions/workflow/status/JoKeks2023/PhidgetHA/validate.yml?branch=main&label=hassfest%20%2F%20hacs)](https://github.com/JoKeks2023/PhidgetHA/actions/workflows/validate.yml)
+[![Release](https://img.shields.io/github/v/release/JoKeks2023/PhidgetHA)](https://github.com/JoKeks2023/PhidgetHA/releases)
+[![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz/docs/faq/custom_repositories/)
+[![License: MIT](https://img.shields.io/github/license/JoKeks2023/PhidgetHA)](LICENSE)
+
+</div>
+
+---
 
 Reference hardware: **PhidgetRFID Read-Write 1024_0B**, attached directly via
 USB to a Raspberry Pi running Home Assistant OS. The integration is generic
@@ -26,6 +36,23 @@ Home Assistant Core
   └── phidget_rfid.write_tag service (read-write readers only)
 ```
 
+## Contents
+
+- [Why no add-on?](#why-no-add-on)
+- [Supported hardware](#supported-hardware)
+- [Installation](#installation)
+- [Setup flow](#setup-flow)
+- [Events](#events)
+- [Entities](#entities)
+- [Services](#services)
+- [Not implemented](#not-implemented-documented-not-invented)
+- [Reconnect behaviour](#reconnect-behaviour)
+- [Multiple readers](#multiple-readers)
+- [Development & testing](#development--testing)
+- [Hardware test checklist](#hardware-test-checklist-real-raspberry-pi--real-reader)
+- [Architecture docs](#architecture--task-documentation)
+- [License](#license)
+
 ## Why no add-on?
 
 An earlier design considered a separate Home Assistant OS add-on to isolate
@@ -46,8 +73,8 @@ out to be unnecessary and, for this integration, not the better trade-off:
   accepted trade-off of this design, mitigated with defensive error handling
   and automatic reconnect rather than eliminated.
 
-See `docs/tasks/T-0001_phidget_rfid_integration/` for the full research
-trail and constraints this decision is based on.
+See [`docs/tasks/T-0001_phidget_rfid_integration/`](docs/tasks/T-0001_phidget_rfid_integration/)
+for the full research trail and constraints this decision is based on.
 
 ## Supported hardware
 
@@ -62,11 +89,11 @@ doesn't support (e.g. writing tags) are simply not offered for it.
 | 1023_1 | EM4100 | — | discontinued |
 | 1024_0 | EM4100, ISO11785 FDX-B, PhidgetTAG | T5577 | NRND |
 | **1024_0B** (reference device) | EM4100, ISO11785 FDX-B, PhidgetTAG | T5577 | NRND |
-| 1024_1 | EM4100, ISO11785 FDX-B, PhidgetTAG, HID 26-bit*, HID Generic* | T5577, EM4305 | current |
+| 1024_1 | EM4100, ISO11785 FDX-B, PhidgetTAG, HID 26-bit\*, HID Generic\* | T5577, EM4305 | current |
 
-`*` Read support claimed on the Phidgets product page; the corresponding
+\* Read support claimed on the Phidgets product page; the corresponding
 `phidget22.RFIDProtocol` enum member names are not verified against the
-current SDK — see constraints doc. Model detection itself
+current SDK — see the constraints doc linked above. Model detection itself
 (`identify_model()`) uses the reader's `getDeviceName()` string and
 `getDeviceVersion()` as a heuristic (Phidget22 does not expose a marketing
 model number like "1024_0B" directly) and falls back to a safe, read-only,
@@ -75,15 +102,30 @@ assumes write support.
 
 ## Installation
 
-Not yet published to HACS. Manual install:
+### Via HACS (custom repository)
+
+Not (yet) in the default HACS store — add it as a custom repository:
+
+1. HACS → **Integrations** → ⋮ (top right) → **Custom repositories**
+2. Repository: `https://github.com/JoKeks2023/PhidgetHA`, category **Integration**
+3. Install "Phidget RFID", restart Home Assistant.
+
+### Manual
 
 1. Copy `custom_components/phidget_rfid` into your Home Assistant
    `config/custom_components/` directory.
 2. Restart Home Assistant.
-3. **Settings → Devices & Services → Add Integration → Phidget RFID.**
-4. Plug in the reader before starting the config flow — auto-detected
-   devices are listed by serial number; choose "Other / manual entry" if
-   yours isn't found (e.g. a reader on a Phidget Network Server).
+
+## Setup flow
+
+**Settings → Devices & Services → Add Integration → Phidget RFID.**
+
+Plug in the reader before starting the flow. Auto-detected devices are
+offered as a dropdown, listed by serial number and device name; choose
+"Other / manual entry" if yours isn't found (e.g. a reader on a Phidget
+Network Server), which then asks for serial number, VINT hub port, and
+channel. The connection is tested before the entry is created, and adding
+the same reader twice is rejected (deduplicated by serial number).
 
 ## Events
 
@@ -99,15 +141,18 @@ actions:
       message: "Tag erkannt: {{ trigger.event.data.tag_id }}"
 ```
 
-`phidget_rfid_tag` data: `tag_id`, `protocol`, `reader`.
-`phidget_rfid_tag_lost` data: `tag_id`.
+| Event | Data |
+|---|---|
+| `phidget_rfid_tag` | `tag_id`, `protocol`, `reader` |
+| `phidget_rfid_tag_lost` | `tag_id` |
 
 ## Entities
 
-- `sensor.<reader>_last_tag` — last tag ID read; `protocol` attribute.
-- `binary_sensor.<reader>_tag_detected` — a tag is currently in range.
-- `binary_sensor.<reader>_connectivity` (diagnostic) — reader attached/USB
-  connected.
+| Entity | Category | Description |
+|---|---|---|
+| `sensor.<reader>_last_tag` | primary | Last tag ID read; `protocol` attribute |
+| `binary_sensor.<reader>_tag_detected` | primary | A tag is currently in range |
+| `binary_sensor.<reader>_connectivity` | diagnostic | Reader attached / USB connected |
 
 Firmware/hardware version and model are shown on the device page (Device
 Registry), not as separate entities, to avoid entity clutter.
@@ -166,10 +211,12 @@ pytest
 ```
 
 The entire `Phidget22` package is mocked in
-`tests/components/phidget_rfid/conftest.py` — no real hardware or native
-library is needed to run the suite. As of this writing: **22 tests, all
-passing**, run against `homeassistant==2026.9.1` /
-`pytest-homeassistant-custom-component==0.13.364`.
+[`tests/components/phidget_rfid/conftest.py`](tests/components/phidget_rfid/conftest.py) —
+no real hardware or native library is needed to run the suite. As of this
+writing: **22 tests, all passing**, run against `homeassistant==2026.9.1` /
+`pytest-homeassistant-custom-component==0.13.364`. CI (`.github/workflows/`)
+runs the same suite plus `ruff`, `hassfest`, and the HACS validator on every
+push.
 
 ## Hardware test checklist (real Raspberry Pi + real reader)
 
@@ -177,7 +224,8 @@ passing**, run against `homeassistant==2026.9.1` /
    (Windows/macOS) or, on Linux, run a short Python snippet using
    `phidget22`'s `PhidgetManager` — or just let the config flow's
    auto-discovery show it to you.
-2. Install this integration (see Installation), plug in the reader.
+2. Install this integration (see [Installation](#installation)), plug in the
+   reader.
 3. **Settings → Devices & Services → Add Integration → Phidget RFID** — the
    reader should appear as a discovered option; select it.
 4. Check **Settings → System → Logs** (filter `phidget_rfid`) for
@@ -203,8 +251,8 @@ passing**, run against `homeassistant==2026.9.1` /
 ## Architecture / task documentation
 
 Full research trail, constraints, and scope for this integration are kept in
-`docs/tasks/T-0001_phidget_rfid_integration/`.
+[`docs/tasks/T-0001_phidget_rfid_integration/`](docs/tasks/T-0001_phidget_rfid_integration/).
 
 ## License
 
-MIT, see `LICENSE`.
+MIT, see [`LICENSE`](LICENSE).
