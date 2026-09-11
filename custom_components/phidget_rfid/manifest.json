@@ -2,10 +2,10 @@
   "domain": "phidget_rfid",
   "name": "Phidget RFID",
   "version": "0.1.0",
-  "codeowners": ["@jorisconrad"],
+  "codeowners": ["@JoKeks2023"],
   "config_flow": true,
-  "documentation": "https://github.com/jorisconrad/PhidgetHA",
-  "issue_tracker": "https://github.com/jorisconrad/PhidgetHA/issues",
+  "documentation": "https://github.com/JoKeks2023/PhidgetHA",
+  "issue_tracker": "https://github.com/JoKeks2023/PhidgetHA/issues",
   "iot_class": "local_push",
   "integration_type": "device",
   "requirements": ["phidget22==1.26.20260821"]
