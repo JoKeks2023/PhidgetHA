@@ -1,0 +1,63 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Phidget RFID Reader auswählen",
+        "description": "Erkannte Phidgets-RFID-Geräte werden unten aufgelistet. Falls dein Gerät nicht gefunden wurde (z. B. Anschluss über einen Phidget Network Server), wähle die manuelle Eingabe.",
+        "data": {
+          "device": "Gerät"
+        }
+      },
+      "manual": {
+        "title": "Manuelle Geräteauswahl",
+        "description": "Seriennummer leer lassen, um das erste angeschlossene Gerät automatisch zu erkennen.",
+        "data": {
+          "serial_number": "Seriennummer",
+          "hub_port": "VINT-Hub-Port (falls über Hub angeschlossen)",
+          "channel": "Kanal"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung zum Phidget RFID Reader fehlgeschlagen. USB-Verbindung und Seriennummer prüfen."
+    },
+    "abort": {
+      "already_configured": "Dieses Gerät ist bereits konfiguriert."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "last_tag": {
+        "name": "Letzter Tag"
+      }
+    },
+    "binary_sensor": {
+      "tag_present": {
+        "name": "Tag erkannt"
+      },
+      "connectivity": {
+        "name": "Verbindung"
+      }
+    }
+  },
+  "services": {
+    "write_tag": {
+      "name": "Tag beschreiben",
+      "description": "Schreibt Daten auf einen RFID-Tag (nur bei Read-Write-fähigen Readern verfügbar).",
+      "fields": {
+        "tag_data": {
+          "name": "Tag-Daten",
+          "description": "Die auf den Tag zu schreibende Zeichenkette."
+        },
+        "protocol": {
+          "name": "Protokoll",
+          "description": "Das RFID-Protokoll, mit dem geschrieben werden soll."
+        },
+        "lock_tag": {
+          "name": "Tag sperren",
+          "description": "Tag nach dem Schreiben gegen weitere Änderungen sperren."
+        }
+      }
+    }
+  }
+}

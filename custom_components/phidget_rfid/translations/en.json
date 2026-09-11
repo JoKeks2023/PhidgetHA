@@ -1,0 +1,63 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Select Phidget RFID reader",
+        "description": "Detected Phidgets RFID devices are listed below. If your device is not listed (e.g. connected via a Phidget Network Server), choose manual entry.",
+        "data": {
+          "device": "Device"
+        }
+      },
+      "manual": {
+        "title": "Manual device selection",
+        "description": "Leave serial number empty to auto-detect the first attached device.",
+        "data": {
+          "serial_number": "Serial number",
+          "hub_port": "VINT hub port (if connected via a hub)",
+          "channel": "Channel"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not connect to the Phidget RFID reader. Check the USB connection and serial number."
+    },
+    "abort": {
+      "already_configured": "This device is already configured."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "last_tag": {
+        "name": "Last tag"
+      }
+    },
+    "binary_sensor": {
+      "tag_present": {
+        "name": "Tag detected"
+      },
+      "connectivity": {
+        "name": "Connectivity"
+      }
+    }
+  },
+  "services": {
+    "write_tag": {
+      "name": "Write tag",
+      "description": "Writes data to an RFID tag (only available on read-write capable readers).",
+      "fields": {
+        "tag_data": {
+          "name": "Tag data",
+          "description": "The string to write to the tag."
+        },
+        "protocol": {
+          "name": "Protocol",
+          "description": "The RFID protocol to write with."
+        },
+        "lock_tag": {
+          "name": "Lock tag",
+          "description": "Lock the tag against further changes after writing."
+        }
+      }
+    }
+  }
+}

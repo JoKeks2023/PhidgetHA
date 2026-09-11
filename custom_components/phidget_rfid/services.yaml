@@ -1,0 +1,25 @@
+write_tag:
+  target:
+    entity:
+      domain: sensor
+      integration: phidget_rfid
+  fields:
+    tag_data:
+      required: true
+      example: "0123456789"
+      selector:
+        text:
+    protocol:
+      required: true
+      example: "EM4100"
+      selector:
+        select:
+          options:
+            - "EM4100"
+            - "ISO11785_FDX_B"
+            - "PHIDGET_TAG"
+    lock_tag:
+      required: false
+      default: false
+      selector:
+        boolean:
